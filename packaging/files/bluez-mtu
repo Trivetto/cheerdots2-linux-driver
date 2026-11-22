@@ -1,0 +1,81 @@
+#!/bin/sh
+# Ustawia / cofa [GATT] ExchangeMTU = 185 w /etc/bluetooth/main.conf (dzieki temu myszka CheerDots wysyla gesty).
+#   bluez-mtu set     - ustaw (kopia zapasowa: main.conf.cheerdots-orig), restart bluetooth jesli zmieniono
+#   bluez-mtu unset   - cofnij zmiane (przywraca linie domyslna), restart bluetooth
+#   bluez-mtu status  - pokaz aktualna wartosc
+CONF=${CHEERDOTS_BLUEZ_CONF:-/etc/bluetooth/main.conf}
+VAL=185
+MARK="# cheerdots: gesty myszki CheerDots 2"
+cur() { python3 - "$CONF" <<'PY'
+import sys
+sec = None
+try:
+    lines = open(sys.argv[1]).read().splitlines()
+except OSError:
+    lines = []
+for l in lines:
+    s = l.strip()
+    if s.startswith("["): sec = s
+    elif sec == "[GATT]" and s.split("=")[0].strip() == "ExchangeMTU" and "=" in s:
+        print(s.split("=", 1)[1].split("#")[0].strip()); break
+PY
+}
+edit() { python3 - "$CONF" "$1" "$VAL" "$MARK" <<'PY'
+# Uwaga: BlueZ (GKeyFile) nie obsluguje komentarzy na koncu linii - znacznik idzie w osobnej linii powyzej.
+import re, sys
+path, mode, val, mark = sys.argv[1:5]
+try:
+    lines = open(path).read().split("\n")
+except FileNotFoundError:
+    lines = []
+out, sec, done, skip_next = [], None, False, False
+new = [mark, f"ExchangeMTU = {val}"]
+for l in lines:
+    s = l.strip()
+    if s == mark:                       # nasz znacznik: przy 'unset' przywroc domyslna linie ponizej
+        skip_next = True
+        continue
+    if s.startswith("["):
+        if sec == "[GATT]" and mode == "set" and not done:
+            out += new; done = True
+        sec = s
+    if sec == "[GATT]" and re.match(r"#?\s*ExchangeMTU\s*=", s):
+        if mode == "set":
+            if not done:
+                out += new; done = True
+            skip_next = False
+            continue
+        if skip_next:
+            out.append("#ExchangeMTU = 517"); skip_next = False
+            continue
+    skip_next = False
+    out.append(l)
+if mode == "set" and not done:
+    out += new if sec == "[GATT]" else ["", "[GATT]"] + new
+text = "\n".join(out)
+open(path, "w").write(text if text.endswith("\n") else text + "\n")
+PY
+}
+restart_bt() {
+    if [ -d /run/systemd/system ] && systemctl is-active -q bluetooth 2>/dev/null; then
+        systemctl restart bluetooth >/dev/null 2>&1 || true
+    fi
+}
+case "${1:-status}" in
+  set)
+    [ "$(cur)" = "$VAL" ] && { echo "BlueZ: ExchangeMTU = $VAL (bez zmian)"; exit 0; }
+    mkdir -p "$(dirname "$CONF")"
+    [ -f "$CONF" ] && [ ! -f "$CONF.cheerdots-orig" ] && cp -p "$CONF" "$CONF.cheerdots-orig"
+    edit set
+    echo "BlueZ: ustawiono ExchangeMTU = $VAL w $CONF"
+    restart_bt ;;
+  unset)
+    [ -f "$CONF" ] || exit 0
+    grep -qF "$MARK" "$CONF" || exit 0
+    edit unset
+    echo "BlueZ: cofnieto ExchangeMTU w $CONF"
+    restart_bt ;;
+  status)
+    v=$(cur); echo "ExchangeMTU = ${v:-domyslne (517)}"; [ "$v" = "$VAL" ] ;;
+  *) echo "uzycie: bluez-mtu set|unset|status"; exit 1 ;;
+esac

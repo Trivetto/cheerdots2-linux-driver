@@ -1,0 +1,11 @@
+// CheerDots 2: zalogowany uzytkownik moze wlaczac/wylaczac usluge sterownika z ikony w zasobniku bez hasla.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        action.lookup("unit") == "cheerdots.service" &&
+        subject.local && subject.active) {
+        var verb = action.lookup("verb");
+        if (verb == "start" || verb == "stop" || verb == "restart") {
+            return polkit.Result.YES;
+        }
+    }
+});

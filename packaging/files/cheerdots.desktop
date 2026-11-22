@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=CheerDots 2
+GenericName=Ustawienia myszki
+Comment=Gesty, bateria i ustawienia myszki CheerDots 2
+Exec=cheerdots-gui --show
+Icon=cheerdots
+Categories=Settings;HardwareSettings;Qt;KDE;
+Keywords=mouse;mysz;gesture;gesty;bluetooth;cheerdots;

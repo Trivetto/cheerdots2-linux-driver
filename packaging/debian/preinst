@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+# Sprzątanie po wcześniejszej instalacji skryptem install.sh (wersje testowe, /opt/cheerdots)
+if [ "$1" = "install" ] || [ "$1" = "upgrade" ]; then
+    if [ -f /etc/systemd/system/cheerdots.service ] && grep -q /opt/cheerdots /etc/systemd/system/cheerdots.service 2>/dev/null; then
+        systemctl disable --now cheerdots.service >/dev/null 2>&1 || true
+        rm -f /etc/systemd/system/cheerdots.service
+    fi
+    systemctl disable --now cheerdots-remap.service >/dev/null 2>&1 || true
+    rm -f /etc/systemd/system/cheerdots-remap.service
+    rm -f /usr/local/bin/cheerdots-gui /usr/local/bin/cheerdots-ctl /etc/modules-load.d/cheerdots.conf \
+          /etc/modules-load.d/cheerdots_l2cap.conf
+    if ! dpkg-query -S /etc/xdg/autostart/cheerdots-gui.desktop >/dev/null 2>&1; then
+        rm -f /etc/xdg/autostart/cheerdots-gui.desktop /usr/share/applications/cheerdots.desktop \
+              /usr/share/icons/hicolor/scalable/apps/cheerdots.svg
+    fi
+    rm -rf /opt/cheerdots
+    # wersja 0.2 (Bumble) - biblioteki i skrypty przejmowania adaptera
+    rm -rf /usr/lib/cheerdots/vendor
+    rm -f /usr/lib/cheerdots/bt-prepare /usr/lib/cheerdots/bt-restore
+    pkill -f "m cheerdots\.daemon" >/dev/null 2>&1 || true
+fi
+exit 0

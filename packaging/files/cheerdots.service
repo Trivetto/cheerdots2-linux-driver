@@ -1,0 +1,16 @@
+[Unit]
+Description=CheerDots 2 – sterownik gestów (systemowy Bluetooth)
+Documentation=file:///usr/share/doc/cheerdots/README.md
+After=bluetooth.service
+Wants=bluetooth.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/cheerdots
+ExecStartPre=-/sbin/modprobe uinput
+ExecStart=/usr/bin/cheerdots-daemon $CHEERDOTS_ARGS
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

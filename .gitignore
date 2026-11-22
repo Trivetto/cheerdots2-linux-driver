@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+# zbudowane paczki - publikowane w GitHub Releases
+dist/
+# logi i nagrania z testow (zawieraja adresy urzadzen)
+dev/logs/
+dev/archive/
+dev/**/*.log
+dev/**/*_btmon.txt
+dev/**/*.btsnoop
+dev/test_*.txt
+*.swp
+.vscode/
+.idea/

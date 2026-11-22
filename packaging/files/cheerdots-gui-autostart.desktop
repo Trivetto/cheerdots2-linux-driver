@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=CheerDots 2 (zasobnik)
+Exec=cheerdots-gui
+Icon=cheerdots
+NoDisplay=true
+X-KDE-autostart-phase=2
+X-GNOME-Autostart-enabled=true

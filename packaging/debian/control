@@ -1,0 +1,18 @@
+Package: cheerdots
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.10), python3-pyqt6, bluez, systemd, kmod
+Installed-Size: @SIZE@
+Maintainer: CheerDots-Linux <cheerdots-linux@localhost>
+Homepage: https://cheerdots.com
+Description: sterownik gestów i ustawień myszki CheerDots 2 (CHP04) dla KDE Plasma
+ Myszka CheerDots 2 wysyła gesty dwoma palcami tylko systemom, które rozpozna
+ (Windows/macOS) - rozpoznaje je po wartości MTU, o którą prosi komputer.
+ Pakiet ustawia w systemowym Bluetooth (BlueZ) ExchangeMTU = 185 (jak macOS),
+ dzięki czemu gesty działają, a Bluetooth pozostaje dostępny dla innych urządzeń.
+ .
+ Zawiera usługę systemową, ikonę w zasobniku ze stanem baterii oraz okno
+ ustawień: wybór myszki, włączanie/wyłączanie i przypisywanie gestów
+ (pulpity, Przegląd, powiększanie, własne skróty).

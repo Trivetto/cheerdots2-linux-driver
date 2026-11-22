@@ -1,0 +1,33 @@
+#!/bin/sh
+set -e
+if [ "$1" = "configure" ]; then
+    mkdir -p /etc/cheerdots
+    [ -f /etc/default/cheerdots ] || echo "CHEERDOTS_ARGS=" > /etc/default/cheerdots
+    # starsze wersje (Bumble) zapisywaly opcje testowe - wyczysc
+    grep -q -- "--no-reject\|--mtu\|--keystore" /etc/default/cheerdots 2>/dev/null && echo "CHEERDOTS_ARGS=" > /etc/default/cheerdots
+    modprobe uinput >/dev/null 2>&1 || true
+    gtk-update-icon-cache -q /usr/share/icons/hicolor >/dev/null 2>&1 || true
+    update-desktop-database -q >/dev/null 2>&1 || true
+    if [ -d /run/systemd/system ]; then
+        # starsze wersje maskowaly systemowy Bluetooth - odblokuj
+        systemctl unmask --runtime bluetooth.service >/dev/null 2>&1 || true
+        for f in /etc/systemd/system/bluetooth.service /run/systemd/system/bluetooth.service; do
+            [ "$(readlink "$f" 2>/dev/null)" = /dev/null ] && rm -f "$f"
+        done
+        systemctl daemon-reload >/dev/null 2>&1 || true
+    fi
+    /usr/lib/cheerdots/bluez-mtu set || true          # ExchangeMTU = 185 (restartuje bluetooth tylko gdy zmieniono)
+    if [ -d /run/systemd/system ]; then
+        systemctl enable bluetooth.service >/dev/null 2>&1 || true
+        systemctl start --no-block bluetooth.service >/dev/null 2>&1 || true
+        systemctl enable cheerdots.service >/dev/null 2>&1 || true
+        systemctl restart cheerdots.service >/dev/null 2>&1 || true
+    fi
+    echo
+    echo "CheerDots 2: zainstalowano (wersja dla systemowego Bluetooth)."
+    echo "  1. Sparuj myszkę w Ustawieniach systemowych -> Bluetooth (tryb parowania w myszce)."
+    echo "     Jeśli była sparowana WCZEŚNIEJ, usuń ją tam i sparuj ponownie."
+    echo "  2. Uruchom 'CheerDots 2' z menu (albo: cheerdots-gui --show) - myszka wykryje się sama."
+    echo "  Ikona w zasobniku uruchamia się sama po zalogowaniu."
+fi
+exit 0

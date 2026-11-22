@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
+    rm -rf /usr/lib/cheerdots          # pozostale pliki __pycache__
+    # cofnij ExchangeMTU (tylko linie dopisana przez pakiet, oznaczona komentarzem)
+    CONF=/etc/bluetooth/main.conf
+    if [ -f "$CONF" ] && grep -q "^# cheerdots: gesty myszki CheerDots 2" "$CONF"; then
+        python3 - "$CONF" <<'PY' || true
+import sys
+p = sys.argv[1]
+lines = open(p).read().split("\n")
+out, skip = [], False
+for l in lines:
+    if l.strip() == "# cheerdots: gesty myszki CheerDots 2":
+        skip = True; continue
+    if skip and l.strip().startswith("ExchangeMTU"):
+        out.append("#ExchangeMTU = 517"); skip = False; continue
+    skip = False; out.append(l)
+open(p, "w").write("\n".join(out))
+PY
+        if [ -d /run/systemd/system ]; then systemctl try-restart bluetooth.service >/dev/null 2>&1 || true; fi
+    fi
+fi
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+fi
+if [ "$1" = "purge" ]; then
+    rm -rf /etc/cheerdots /var/lib/cheerdots /etc/default/cheerdots /run/cheerdots
+    rm -f /etc/bluetooth/main.conf.cheerdots-orig /etc/bluetooth/main.conf.cheerdots-bak
+fi
+exit 0
